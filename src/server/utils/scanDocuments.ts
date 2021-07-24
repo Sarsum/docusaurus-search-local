@@ -1,3 +1,4 @@
+import cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
 import util from "util";
@@ -32,12 +33,15 @@ export async function scanDocuments(
       const html = await readFileAsync(filePath, { encoding: "utf8" });
       const { pageTitle, sections, breadcrumb } = parse(html, type, url);
 
+      const docVersion = getDocVersion(html);
+
       const titleId = getNextDocId();
 
       titleDocuments.push({
         i: titleId,
         t: pageTitle,
         u: url,
+        v: docVersion,
         b: breadcrumb,
       });
 
@@ -47,6 +51,7 @@ export async function scanDocuments(
             i: getNextDocId(),
             t: section.title,
             u: url,
+            v: docVersion,
             h: section.hash,
             p: titleId,
           });
@@ -58,6 +63,7 @@ export async function scanDocuments(
             t: section.content,
             s: section.title || pageTitle,
             u: url,
+            v: docVersion,
             h: section.hash,
             p: titleId,
           });
@@ -66,4 +72,10 @@ export async function scanDocuments(
     })
   );
   return allDocuments;
+}
+
+export function getDocVersion(html: string): string {
+  const $ = cheerio.load(html);
+  const v = $('meta[name="docusaurus_version"]').attr("content");
+  return v ? v : "undefined";
 }

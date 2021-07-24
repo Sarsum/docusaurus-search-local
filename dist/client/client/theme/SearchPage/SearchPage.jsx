@@ -1,37 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import Layout, {
-  useActiveVersion,
-  useLatestVersion,
-  useVersions,
-} from "@theme/Layout";
+import Layout from "@theme/Layout";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-
 import useSearchQuery from "../hooks/useSearchQuery";
 import { fetchIndexes } from "../SearchBar/fetchIndexes";
 import { SearchSourceFactory } from "../../utils/SearchSourceFactory";
-import { SearchDocument, SearchResult } from "../../../shared/interfaces";
 import { highlight } from "../../utils/highlight";
 import { highlightStemmed } from "../../utils/highlightStemmed";
 import { getStemmedPositions } from "../../utils/getStemmedPositions";
 import LoadingRing from "../LoadingRing/LoadingRing";
 import { translations } from "../../utils/proxiedGenerated";
 import { simpleTemplate } from "../../utils/simpleTemplate";
-
 import styles from "./SearchPage.module.css";
-
-export default function SearchPage(): React.ReactElement {
+export default function SearchPage() {
   const {
     siteConfig: { baseUrl },
   } = useDocusaurusContext();
   const { searchValue, updateSearchPath } = useSearchQuery();
   const [searchQuery, setSearchQuery] = useState(searchValue);
-  const [searchSource, setSearchSource] = useState<
-    (input: string, callback: (results: SearchResult[]) => void) => void
-  >();
-  const [searchResults, setSearchResults] = useState<SearchResult[]>();
-
+  const [searchSource, setSearchSource] = useState();
+  const [searchResults, setSearchResults] = useState();
   const pageTitle = useMemo(
     () =>
       searchQuery
@@ -41,10 +30,8 @@ export default function SearchPage(): React.ReactElement {
         : translations.search_the_documentation,
     [searchQuery]
   );
-
   useEffect(() => {
     updateSearchPath(searchQuery);
-
     if (searchSource) {
       if (searchQuery) {
         searchSource(searchQuery, (results) => {
@@ -54,53 +41,29 @@ export default function SearchPage(): React.ReactElement {
         setSearchResults(undefined);
       }
     }
-
     // `updateSearchPath` should not be in the deps,
     // otherwise will cause call stack overflow.
   }, [searchQuery, searchSource]);
-
   const handleSearchInputChange = useCallback((e) => {
     setSearchQuery(e.target.value);
   }, []);
-
   useEffect(() => {
     if (searchValue && searchValue !== searchQuery) {
       setSearchQuery(searchValue);
     }
   }, [searchValue]);
-
-  const versions: { name: string; label: string }[] = useVersions();
-  const activeVersion:
-    | { name: string; label: string }
-    | undefined = useActiveVersion();
-  const latestVersion:
-    | { name: string; label: string }
-    | undefined = useLatestVersion();
-
   useEffect(() => {
     async function doFetchIndexes() {
       const { wrappedIndexes, zhDictionary } = await fetchIndexes(baseUrl);
       setSearchSource(() =>
-        SearchSourceFactory(
-          wrappedIndexes,
-          zhDictionary,
-          100,
-          versions,
-          activeVersion,
-          latestVersion
-        )
+        SearchSourceFactory(wrappedIndexes, zhDictionary, 100)
       );
     }
     doFetchIndexes();
   }, [baseUrl]);
-
   return (
     <Layout title={pageTitle}>
       <Head>
-        {/*
-         We should not index search pages
-          See https://github.com/facebook/docusaurus/pull/3233
-        */}
         <meta property="robots" content="noindex, follow" />
       </Head>
 
@@ -155,20 +118,15 @@ export default function SearchPage(): React.ReactElement {
     </Layout>
   );
 }
-
 function SearchResultItem({
   searchResult: { document, type, page, tokens, metadata },
-}: {
-  searchResult: SearchResult;
-}): React.ReactElement {
+}) {
   const isTitle = type === 0;
   const isContent = type === 2;
-  const pathItems = ((isTitle
-    ? document.b
-    : (page as SearchDocument).b) as string[]).slice();
-  const articleTitle = (isContent ? document.s : document.t) as string;
+  const pathItems = (isTitle ? document.b : page.b).slice();
+  const articleTitle = isContent ? document.s : document.t;
   if (!isTitle) {
-    pathItems.push((page as SearchDocument).t);
+    pathItems.push(page.t);
   }
   return (
     <article className={styles.searchResultItem}>
@@ -185,7 +143,7 @@ function SearchResultItem({
                   100
                 ),
           }}
-        />
+        ></Link>
       </h2>
       {pathItems.length > 0 && (
         <p className={styles.searchResultItemPath}>{pathItems.join(" › ")}</p>

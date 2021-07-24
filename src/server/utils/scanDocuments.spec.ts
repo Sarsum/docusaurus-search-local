@@ -74,12 +74,14 @@ describe("scanDocuments", () => {
             "i": 1,
             "t": "Hello First Docs",
             "u": "/1",
+            "v": "undefined"
           },
           Object {
             "b": Array [],
             "i": 5,
             "t": "Hello First Page",
             "u": "/2",
+            "v": "undefined"
           },
         ],
         Array [
@@ -89,6 +91,7 @@ describe("scanDocuments", () => {
             "p": 1,
             "t": "First heading",
             "u": "/1",
+            "v": "undefined"
           },
         ],
         Array [
@@ -99,6 +102,7 @@ describe("scanDocuments", () => {
             "s": "Hello First Docs",
             "t": "Leading content.",
             "u": "/1",
+            "v": "undefined"
           },
           Object {
             "h": "#first-heading",
@@ -107,6 +111,7 @@ describe("scanDocuments", () => {
             "s": "First heading",
             "t": "First content.",
             "u": "/1",
+            "v": "undefined"
           },
         ],
       ]

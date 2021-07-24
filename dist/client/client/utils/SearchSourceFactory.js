@@ -1,42 +1,21 @@
 import { tokenize } from "./tokenize";
 import { smartQueries } from "./smartQueries";
-import {
-  MatchMetadata,
-  WrappedIndex,
-  SearchResult,
-  SearchDocument,
-  InitialSearchResult,
-  DocusaurusVersion,
-} from "../../shared/interfaces";
 import { sortSearchResults } from "./sortSearchResults";
 import { processTreeStatusOfSearchResults } from "./processTreeStatusOfSearchResults";
 import { language } from "./proxiedGenerated";
-import lunr from "lunr";
-
 export function SearchSourceFactory(
-  wrappedIndexes: WrappedIndex[],
-  zhDictionary: string[],
-  resultsLimit: number,
-  versions: DocusaurusVersion[],
-  activeVersion: DocusaurusVersion | undefined,
-  latestVersion: DocusaurusVersion | undefined
+  wrappedIndexes,
+  zhDictionary,
+  resultsLimit
 ) {
-  return function searchSource(
-    input: string,
-    callback: (results: SearchResult[]) => void
-  ): void {
+  return function searchSource(input, callback) {
     const rawTokens = tokenize(input, language);
     if (rawTokens.length === 0) {
       callback([]);
       return;
     }
-
     const queries = smartQueries(rawTokens, zhDictionary);
-    const results: InitialSearchResult[] = [];
-
-    const versionToSearch =
-      versions.length <= 1 ? undefined : activeVersion ?? latestVersion;
-
+    const results = [];
     search: for (const { term, tokens } of queries) {
       for (const { documents, index, type } of wrappedIndexes) {
         results.push(
@@ -48,26 +27,7 @@ export function SearchSourceFactory(
                   presence: item.presence,
                 });
               }
-              if (versionToSearch) {
-                // We want to search all documents with version = versionToSearch OR version = undefined
-                // (blog posts and static pages have an undefined version)
-                //
-                // Since lunr.js does not allow OR queries, we instead prohibit all versions
-                // except versionToSearch and undefined.
-                //
-                // https://github.com/cmfcmf/docusaurus-search-local/issues/19
-                versions.forEach((version) => {
-                  if (version.name !== versionToSearch.name) {
-                    query.term(version.name, {
-                      fields: ["v"],
-                      boost: 0,
-                      presence: lunr.Query.presence.PROHIBITED,
-                    });
-                  }
-                });
-              }
             })
-            .filter((result) => result.score > 0)
             .slice(0, resultsLimit)
             // Remove duplicated results.
             .filter(
@@ -80,7 +40,7 @@ export function SearchSourceFactory(
             .map((result) => {
               const document = documents.find(
                 (doc) => doc.i.toString() === result.ref
-              ) as SearchDocument;
+              );
               return {
                 document,
                 type,
@@ -89,7 +49,7 @@ export function SearchSourceFactory(
                   wrappedIndexes[0].documents.find(
                     (doc) => doc.i === document.p
                   ),
-                metadata: result.matchData.metadata as MatchMetadata,
+                metadata: result.matchData.metadata,
                 tokens,
                 score: result.score,
               };
@@ -100,11 +60,8 @@ export function SearchSourceFactory(
         }
       }
     }
-
     sortSearchResults(results);
-
     processTreeStatusOfSearchResults(results);
-
-    callback(results as SearchResult[]);
+    callback(results);
   };
 }

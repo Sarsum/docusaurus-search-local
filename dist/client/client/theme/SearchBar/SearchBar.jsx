@@ -1,35 +1,20 @@
-import React, {
-  ReactElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
 import { useHistory, useLocation } from "@docusaurus/router";
-
 import { fetchIndexes } from "./fetchIndexes";
 import { SearchSourceFactory } from "../../utils/SearchSourceFactory";
 import { SuggestionTemplate } from "./SuggestionTemplate";
 import { EmptyTemplate } from "./EmptyTemplate";
-import { SearchResult } from "../../../shared/interfaces";
 import {
   searchResultLimits,
   Mark,
   translations,
 } from "../../utils/proxiedGenerated";
 import LoadingRing from "../LoadingRing/LoadingRing";
-
 import styles from "./SearchBar.module.css";
-import {
-  useActiveVersion,
-  useLatestVersion,
-  useVersions,
-} from "@theme/hooks/useDocs";
-
-async function fetchAutoCompleteJS(): Promise<any> {
+async function fetchAutoCompleteJS() {
   const autoCompleteModule = await import("@easyops-cn/autocomplete.js");
   const autoComplete = autoCompleteModule.default;
   if (autoComplete.noConflict) {
@@ -41,37 +26,19 @@ async function fetchAutoCompleteJS(): Promise<any> {
   }
   return autoComplete;
 }
-
 const SEARCH_PARAM_HIGHLIGHT = "_highlight";
-
-interface SearchBarProps {
-  isSearchBarExpanded: boolean;
-  handleSearchBarToggle?: (expanded: boolean) => void;
-}
-
-export default function SearchBar({
-  handleSearchBarToggle,
-}: SearchBarProps): ReactElement {
+export default function SearchBar({ handleSearchBarToggle }) {
   const {
     siteConfig: { baseUrl },
   } = useDocusaurusContext();
   const history = useHistory();
   const location = useLocation();
-  const searchBarRef = useRef<HTMLInputElement>(null);
+  const searchBarRef = useRef(null);
   const indexState = useRef("empty"); // empty, loaded, done
   // Should the input be focused after the index is loaded?
   const focusAfterIndexLoaded = useRef(false);
   const [loading, setLoading] = useState(false);
   const [inputChanged, setInputChanged] = useState(false);
-
-  const versions: { name: string; label: string }[] = useVersions();
-  const activeVersion:
-    | { name: string; label: string }
-    | undefined = useActiveVersion();
-  const latestVersion:
-    | { name: string; label: string }
-    | undefined = useLatestVersion();
-
   const loadIndex = useCallback(async () => {
     if (indexState.current !== "empty") {
       // Do not load the index (again) if its already loaded or in the process of being loaded.
@@ -79,12 +46,10 @@ export default function SearchBar({
     }
     indexState.current = "loading";
     setLoading(true);
-
     const [{ wrappedIndexes, zhDictionary }, autoComplete] = await Promise.all([
       fetchIndexes(baseUrl),
       fetchAutoCompleteJS(),
     ]);
-
     const search = autoComplete(
       searchBarRef.current,
       {
@@ -108,15 +73,12 @@ export default function SearchBar({
           source: SearchSourceFactory(
             wrappedIndexes,
             zhDictionary,
-            searchResultLimits,
-            versions,
-            activeVersion,
-            latestVersion
+            searchResultLimits
           ),
           templates: {
             suggestion: SuggestionTemplate,
             empty: EmptyTemplate,
-            footer: ({ query, isEmpty }: any) => {
+            footer: ({ query, isEmpty }) => {
               if (isEmpty) {
                 return;
               }
@@ -140,8 +102,8 @@ export default function SearchBar({
         },
       ]
     ).on("autocomplete:selected", function (
-      event: any,
-      { document: { u, h }, tokens }: SearchResult
+      event,
+      { document: { u, h }, tokens }
     ) {
       let url = u;
       if (Mark && tokens.length > 0) {
@@ -156,19 +118,16 @@ export default function SearchBar({
       }
       history.push(url);
     });
-
     indexState.current = "done";
     setLoading(false);
-
     if (focusAfterIndexLoaded.current) {
-      const input = searchBarRef.current as HTMLInputElement;
+      const input = searchBarRef.current;
       if (input.value) {
         search.autocomplete.open();
       }
       input.focus();
     }
   }, [baseUrl, history]);
-
   useEffect(() => {
     if (!Mark) {
       return;
@@ -193,30 +152,22 @@ export default function SearchBar({
       mark.mark(keywords);
     });
   }, [location.search]);
-
   const onInputFocus = useCallback(() => {
     focusAfterIndexLoaded.current = true;
     loadIndex();
     handleSearchBarToggle?.(true);
   }, [handleSearchBarToggle, loadIndex]);
-
   const onInputBlur = useCallback(() => {
     handleSearchBarToggle?.(false);
   }, [handleSearchBarToggle]);
-
   const onInputMouseEnter = useCallback(() => {
     loadIndex();
   }, [loadIndex]);
-
-  const onInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.value) {
-        setInputChanged(true);
-      }
-    },
-    []
-  );
-
+  const onInputChange = useCallback((event) => {
+    if (event.target.value) {
+      setInputChanged(true);
+    }
+  }, []);
   return (
     <div
       className={clsx("navbar__search", styles.searchBarContainer, {
