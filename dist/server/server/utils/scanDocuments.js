@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scanDocuments = void 0;
+exports.getDocVersion = exports.scanDocuments = void 0;
 const tslib_1 = require("tslib");
+const cheerio_1 = tslib_1.__importDefault(require("cheerio"));
 const fs_1 = tslib_1.__importDefault(require("fs"));
 const path_1 = tslib_1.__importDefault(require("path"));
 const util_1 = tslib_1.__importDefault(require("util"));
@@ -33,11 +34,13 @@ function scanDocuments(DocInfoWithFilePathList) {
             type,
             url
           );
+          const docVersion = getDocVersion(html);
           const titleId = getNextDocId();
           titleDocuments.push({
             i: titleId,
             t: pageTitle,
             u: url,
+            v: docVersion,
             b: breadcrumb,
           });
           for (const section of sections) {
@@ -46,6 +49,7 @@ function scanDocuments(DocInfoWithFilePathList) {
                 i: getNextDocId(),
                 t: section.title,
                 u: url,
+                v: docVersion,
                 h: section.hash,
                 p: titleId,
               });
@@ -56,6 +60,7 @@ function scanDocuments(DocInfoWithFilePathList) {
                 t: section.content,
                 s: section.title || pageTitle,
                 u: url,
+                v: docVersion,
                 h: section.hash,
                 p: titleId,
               });
@@ -68,3 +73,9 @@ function scanDocuments(DocInfoWithFilePathList) {
   });
 }
 exports.scanDocuments = scanDocuments;
+function getDocVersion(html) {
+  const $ = cheerio_1.default.load(html);
+  const v = $('meta[name="docusaurus_version"]').attr("content");
+  return v ? v : "undefined";
+}
+exports.getDocVersion = getDocVersion;

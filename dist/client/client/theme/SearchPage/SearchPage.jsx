@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import Layout from "@theme/Layout";
+import Layout, {
+  useActiveVersion,
+  useLatestVersion,
+  useVersions,
+} from "@theme/Layout";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import useSearchQuery from "../hooks/useSearchQuery";
@@ -52,11 +56,21 @@ export default function SearchPage() {
       setSearchQuery(searchValue);
     }
   }, [searchValue]);
+  const versions = useVersions();
+  const activeVersion = useActiveVersion();
+  const latestVersion = useLatestVersion();
   useEffect(() => {
     async function doFetchIndexes() {
       const { wrappedIndexes, zhDictionary } = await fetchIndexes(baseUrl);
       setSearchSource(() =>
-        SearchSourceFactory(wrappedIndexes, zhDictionary, 100)
+        SearchSourceFactory(
+          wrappedIndexes,
+          zhDictionary,
+          100,
+          versions,
+          activeVersion,
+          latestVersion
+        )
       );
     }
     doFetchIndexes();
@@ -143,7 +157,7 @@ function SearchResultItem({
                   100
                 ),
           }}
-        ></Link>
+        />
       </h2>
       {pathItems.length > 0 && (
         <p className={styles.searchResultItemPath}>{pathItems.join(" › ")}</p>

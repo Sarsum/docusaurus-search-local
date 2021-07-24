@@ -14,6 +14,11 @@ import {
 } from "../../utils/proxiedGenerated";
 import LoadingRing from "../LoadingRing/LoadingRing";
 import styles from "./SearchBar.module.css";
+import {
+  useActiveVersion,
+  useLatestVersion,
+  useVersions,
+} from "@theme/hooks/useDocs";
 async function fetchAutoCompleteJS() {
   const autoCompleteModule = await import("@easyops-cn/autocomplete.js");
   const autoComplete = autoCompleteModule.default;
@@ -39,6 +44,9 @@ export default function SearchBar({ handleSearchBarToggle }) {
   const focusAfterIndexLoaded = useRef(false);
   const [loading, setLoading] = useState(false);
   const [inputChanged, setInputChanged] = useState(false);
+  const versions = useVersions();
+  const activeVersion = useActiveVersion();
+  const latestVersion = useLatestVersion();
   const loadIndex = useCallback(async () => {
     if (indexState.current !== "empty") {
       // Do not load the index (again) if its already loaded or in the process of being loaded.
@@ -73,7 +81,10 @@ export default function SearchBar({ handleSearchBarToggle }) {
           source: SearchSourceFactory(
             wrappedIndexes,
             zhDictionary,
-            searchResultLimits
+            searchResultLimits,
+            versions,
+            activeVersion,
+            latestVersion
           ),
           templates: {
             suggestion: SuggestionTemplate,
