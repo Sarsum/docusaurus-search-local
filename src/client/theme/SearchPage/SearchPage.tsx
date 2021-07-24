@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import Layout, {
+import Layout from "@theme/Layout";
+import {
   useActiveVersion,
   useLatestVersion,
   useVersions,
