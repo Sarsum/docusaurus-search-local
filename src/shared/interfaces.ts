@@ -58,6 +58,9 @@ export interface SearchDocument {
   /** Doc URL. */
   u: string;
 
+  /** Doc version. */
+  v: string;
+
   /** Doc hash. */
   h?: string;
 
@@ -193,4 +196,9 @@ export interface DocusaurusContext {
   baseUrl: string;
   siteDir: string;
   generatedFilesDir: string;
+}
+
+export interface DocusaurusVersion {
+  name: string;
+  label: string;
 }
