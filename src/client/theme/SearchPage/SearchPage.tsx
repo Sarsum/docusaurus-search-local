@@ -4,7 +4,7 @@ import Layout, {
   useActiveVersion,
   useLatestVersion,
   useVersions,
-} from "@theme/Layout";
+} from "@theme/hooks/useDocs";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 
